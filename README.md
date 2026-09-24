@@ -27,7 +27,8 @@ Here are the current results from my own performance testing:
 | **H-Slice**      | 80% stronger than this build |
 | **JS Engine**    | 50% stronger than this build |
 | **DenpaEX**      | 25% stronger than this build |
-| **ADR Engine**   |       5% stronger *(Status)* |
+| **ADR Engine**   |       15% stronger then this build |
+| **ADR Engine Redux** | 5% stronger **(Status)**  |
 
 > **Note:** These percentages are based on my own testing and are not official industry benchmarks.
 
