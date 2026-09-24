@@ -77,6 +77,12 @@ import states.TitleState;
 	public var discordRPC:Bool = true;
 	public var loadingScreen:Bool = true;
 	public var language:String = 'en-US';
+
+	// Optimizations
+	public var showComboPopup:Bool = true;
+	public var showRatingPopup:Bool = true;
+	public var showNumberPopup:Bool = true;
+	public var showPopupScore:Bool = true;
 }
 
 class ClientPrefs {

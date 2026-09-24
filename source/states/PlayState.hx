@@ -2547,6 +2547,8 @@ class PlayState extends MusicBeatState
 
 	private function popUpScore(note:Note = null):Void
 	{
+		if (!ClientPrefs.data.showPopupScore) return;
+		
 		var noteDiff:Float = Math.abs(note.strumTime - Conductor.songPosition + ClientPrefs.data.ratingOffset);
 		vocals.volume = 1;
 
@@ -2602,7 +2604,7 @@ class PlayState extends MusicBeatState
 		rating.acceleration.y = 550 * playbackRate * playbackRate;
 		rating.velocity.y -= FlxG.random.int(140, 175) * playbackRate;
 		rating.velocity.x -= FlxG.random.int(0, 10) * playbackRate;
-		rating.visible = (!ClientPrefs.data.hideHud && showRating);
+		rating.visible = (!ClientPrefs.data.hideHud && showRating && ClientPrefs.data.showRatingPopup);
 		rating.x += ClientPrefs.data.comboOffset[0];
 		rating.y -= ClientPrefs.data.comboOffset[1];
 		rating.antialiasing = antialias;
@@ -2612,7 +2614,7 @@ class PlayState extends MusicBeatState
 		comboSpr.x = placement;
 		comboSpr.acceleration.y = FlxG.random.int(200, 300) * playbackRate * playbackRate;
 		comboSpr.velocity.y -= FlxG.random.int(140, 160) * playbackRate;
-		comboSpr.visible = (!ClientPrefs.data.hideHud && showCombo);
+		comboSpr.visible = (!ClientPrefs.data.hideHud && showCombo && ClientPrefs.data.showComboPopup);
 		comboSpr.x += ClientPrefs.data.comboOffset[0];
 		comboSpr.y -= ClientPrefs.data.comboOffset[1];
 		comboSpr.antialiasing = antialias;
@@ -2636,7 +2638,7 @@ class PlayState extends MusicBeatState
 
 		var daLoop:Int = 0;
 		var xThing:Float = 0;
-		if (showCombo)
+		if (showCombo && ClientPrefs.data.showComboPopup)
 			comboGroup.add(comboSpr);
 
 		var separatedScore:String = Std.string(combo).lpad('0', 3);
@@ -2654,11 +2656,11 @@ class PlayState extends MusicBeatState
 			numScore.acceleration.y = FlxG.random.int(200, 300) * playbackRate * playbackRate;
 			numScore.velocity.y -= FlxG.random.int(140, 160) * playbackRate;
 			numScore.velocity.x = FlxG.random.float(-5, 5) * playbackRate;
-			numScore.visible = !ClientPrefs.data.hideHud;
+			numScore.visible = (!ClientPrefs.data.hideHud && ClientPrefs.data.showNumberPopup);
 			numScore.antialiasing = antialias;
 
 			//if (combo >= 10 || combo == 0)
-			if(showComboNum)
+			if(showComboNum && ClientPrefs.data.showNumberPopup)
 				comboGroup.add(numScore);
 
 			FlxTween.tween(numScore, {alpha: 0}, 0.2 / playbackRate, {
