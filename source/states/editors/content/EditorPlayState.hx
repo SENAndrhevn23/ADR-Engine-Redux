@@ -605,7 +605,7 @@ class EditorPlayState extends MusicBeatSubstate
 		if (showCombo && ClientPrefs.data.showComboPopup)
 			comboGroup.add(comboSpr);
 
-		var separatedScore:String = Std.string(combo).lpad('0', 3);
+		var separatedScore:String = ClientPrefs.data.betterNumberFormatting ? Std.string(combo) : Std.string(combo).lpad('0', 3);
 		for (i in 0...separatedScore.length)
 		{
 			var numScore:FlxSprite = new FlxSprite().loadGraphic(Paths.image(uiFolder + 'num' + Std.parseInt(separatedScore.charAt(i)) + PlayState.uiPostfix));
@@ -822,7 +822,12 @@ class EditorPlayState extends MusicBeatSubstate
 		if (!note.isSustainNote)
 		{
 			combo++;
-			if(combo > 9999) combo = 9999;
+			var maxCombo:Int = 9999;
+			if (ClientPrefs.data.disableComboCap)
+			{
+				maxCombo = ClientPrefs.data.maxComboCap ? 0x7FFFFFFF : 0x7FFFFFFF; // Int32 max: 2,147,483,647
+			}
+			if(combo > maxCombo) combo = maxCombo;
 			popUpScore(note);
 		}
 

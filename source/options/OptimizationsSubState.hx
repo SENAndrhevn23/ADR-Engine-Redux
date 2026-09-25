@@ -31,6 +31,18 @@ class OptimizationsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		var option:Option = new Option('Bulk Loading',
+			'Enables lazy/chunked note loading for large charts (1M+ notes).\nLoads notes on-demand instead of all at once.\nSignificantly reduces memory usage and initial load time.',
+			'bulkLoading',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option('Bulk Faster Loading',
+			'Optimized full loading for large charts.\nLoads all notes at once but with performance optimizations:\n- Pre-allocates arrays to avoid resizing\n- Batches note creation\n- Reduces garbage collection\n- Best for charts under 500k notes.',
+			'bulkFasterLoading',
+			BOOL);
+		addOption(option);
+
 		super();
 	}
 }

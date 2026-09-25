@@ -183,6 +183,11 @@ class PlayState extends MusicBeatState
 	public var ratingsData:Array<Rating> = Rating.loadDefault();
 
 	private var generatedMusic:Bool = false;
+	// Bulk loading (lazy note generation)
+	private var bulkLoadingEnabled:Bool = false;
+	private var lastGeneratedTime:Float = -1;
+	private var bulkLoadWindow:Float = 30000; // 30 seconds ahead
+	private var hasGeneratedInitialNotes:Bool = false;
 	public var endingSong:Bool = false;
 	public var startingSong:Bool = false;
 	private var updateTime:Bool = true;
@@ -1332,6 +1337,35 @@ class PlayState extends MusicBeatState
 		}
 		catch(e:Dynamic) {}
 
+		// Check if bulk loading is enabled
+		bulkLoadingEnabled = ClientPrefs.data.bulkLoading;
+		var bulkFasterLoadingEnabled:Bool = ClientPrefs.data.bulkFasterLoading;
+		lastGeneratedTime = -1;
+		hasGeneratedInitialNotes = false;
+
+		if (bulkLoadingEnabled)
+		{
+			// Generate initial notes only (first 10 seconds)
+			generateNotesInRange(0, 10000);
+			hasGeneratedInitialNotes = true;
+			generatedMusic = true;
+			lastGeneratedTime = 10000;
+		}
+		else if (bulkFasterLoadingEnabled)
+		{
+			// Generate all notes at once with optimizations
+			generateAllNotesOptimized();
+		}
+		else
+		{
+			// Generate all notes at once (original behavior)
+			generateAllNotes();
+		}
+	}
+
+	// Generate all notes at once (original behavior)
+	private function generateAllNotes():Void
+	{
 		var oldNote:Note = null;
 		var sectionsData:Array<SwagSection> = PlayState.SONG.notes;
 		var ghostNotesCaught:Int = 0;
@@ -1450,12 +1484,315 @@ class PlayState extends MusicBeatState
 			}
 		}
 		trace('["${SONG.song.toUpperCase()}" CHART INFO]: Ghost Notes Cleared: $ghostNotesCaught');
-		for (event in songData.events) //Event Notes
+		for (event in SONG.events) //Event Notes
 			for (i in 0...event[1].length)
 				makeEvent(event, i);
 
 		unspawnNotes.sort(sortByTime);
 		generatedMusic = true;
+	}
+
+	// Generate all notes at once with optimizations (for large charts under 500k notes)
+	private function generateAllNotesOptimized():Void
+	{
+		var sectionsData:Array<SwagSection> = PlayState.SONG.notes;
+		
+		// Pre-calculate total note count for array pre-allocation
+		var totalNotes:Int = 0;
+		for (section in sectionsData)
+		{
+			for (noteData in section.sectionNotes)
+			{
+				totalNotes++;
+				var holdLength:Float = noteData[2];
+				if (!Math.isNaN(holdLength) && holdLength > 0)
+				{
+					var curStepCrochet:Float = 60 / Conductor.bpm * 1000 / 4.0;
+					totalNotes += Math.round(holdLength / curStepCrochet);
+				}
+			}
+		}
+		
+		// Pre-allocate array to avoid resizing
+		unspawnNotes = [];
+		for (i in 0...totalNotes) unspawnNotes.push(null);
+		var noteIndex:Int = 0;
+		
+		var oldNote:Note = null;
+		var ghostNotesCaught:Int = 0;
+		var daBpm:Float = Conductor.bpm;
+		var curStepCrochet:Float = 60 / daBpm * 1000 / 4.0;
+		
+		// Cache frequently accessed prefs
+		var downScroll:Bool = ClientPrefs.data.downScroll;
+		var middleScroll:Bool = ClientPrefs.data.middleScroll;
+		var isPixelStage:Bool = PlayState.isPixelStage;
+		var daPixelZoom:Float = PlayState.daPixelZoom;
+		var playbackRate:Float = this.playbackRate;
+		var antialias:Bool = ClientPrefs.data.antialiasing;
+		
+		for (section in sectionsData)
+		{
+			if (section.changeBPM != null && section.changeBPM && section.bpm != null && daBpm != section.bpm)
+			{
+				daBpm = section.bpm;
+				curStepCrochet = 60 / daBpm * 1000 / 4.0;
+			}
+
+			for (i in 0...section.sectionNotes.length)
+			{
+				final songNotes: Array<Dynamic> = section.sectionNotes[i];
+				var spawnTime: Float = songNotes[0];
+				var noteColumn: Int = Std.int(songNotes[1] % totalColumns);
+				var holdLength: Float = songNotes[2];
+				var noteType: String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
+				if (Math.isNaN(holdLength))
+					holdLength = 0.0;
+
+				var gottaHitNote:Bool = (songNotes[1] < totalColumns);
+
+				// Ghost note check (simplified for speed)
+				if (i != 0) {
+					for (evilNote in unspawnNotes) {
+						if (evilNote == null) break;
+						var matches: Bool = (noteColumn == evilNote.noteData && gottaHitNote == evilNote.mustPress && evilNote.noteType == noteType);
+						if (matches && Math.abs(spawnTime - evilNote.strumTime) < flixel.math.FlxMath.EPSILON) {
+							if (evilNote.tail.length > 0)
+								for (tail in evilNote.tail)
+								{
+									tail.destroy();
+								}
+							evilNote.destroy();
+							ghostNotesCaught++;
+						}
+					}
+				}
+
+				var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
+				var isAlt: Bool = section.altAnim && !gottaHitNote;
+				swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
+				swagNote.animSuffix = isAlt ? "-alt" : "";
+				swagNote.mustPress = gottaHitNote;
+				swagNote.sustainLength = holdLength;
+				swagNote.noteType = noteType;
+	
+				swagNote.scrollFactor.set();
+				
+				// Use direct array assignment instead of push
+				unspawnNotes[noteIndex] = swagNote;
+				noteIndex++;
+
+				var roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
+				if(roundSus > 0)
+				{
+					for (susNote in 0...roundSus)
+					{
+						oldNote = unspawnNotes[noteIndex - 1];
+
+						var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
+						sustainNote.animSuffix = swagNote.animSuffix;
+						sustainNote.mustPress = swagNote.mustPress;
+						sustainNote.gfNote = swagNote.gfNote;
+						sustainNote.noteType = swagNote.noteType;
+						sustainNote.scrollFactor.set();
+						sustainNote.parent = swagNote;
+						
+						unspawnNotes[noteIndex] = sustainNote;
+						noteIndex++;
+						swagNote.tail.push(sustainNote);
+
+						sustainNote.correctionOffset = swagNote.height / 2;
+						if(!isPixelStage)
+						{
+							if(oldNote.isSustainNote)
+							{
+								oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
+								oldNote.scale.y /= playbackRate;
+								oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+							}
+
+							if(downScroll)
+								sustainNote.correctionOffset = 0;
+						}
+						else if(oldNote.isSustainNote)
+						{
+							oldNote.scale.y /= playbackRate;
+							oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+						}
+
+						if (sustainNote.mustPress) sustainNote.x += FlxG.width / 2;
+						else if(middleScroll)
+						{
+							sustainNote.x += 310;
+							if(noteColumn > 1)
+								sustainNote.x += FlxG.width / 2 + 25;
+						}
+					}
+				}
+
+				if (swagNote.mustPress)
+				{
+					swagNote.x += FlxG.width / 2;
+				}
+				else if(middleScroll)
+				{
+					swagNote.x += 310;
+					if(noteColumn > 1)
+					{
+						swagNote.x += FlxG.width / 2 + 25;
+					}
+				}
+				if(!noteTypes.contains(swagNote.noteType))
+					noteTypes.push(swagNote.noteType);
+
+				oldNote = swagNote;
+			}
+		}
+		
+		// Trim array to actual size
+		if (noteIndex < unspawnNotes.length)
+			unspawnNotes = unspawnNotes.slice(0, noteIndex);
+		
+		trace('["${SONG.song.toUpperCase()}" CHART INFO]: Ghost Notes Cleared: $ghostNotesCaught, Total Notes: $noteIndex');
+		for (event in SONG.events)
+			for (i in 0...event[1].length)
+				makeEvent(event, i);
+
+		unspawnNotes.sort(sortByTime);
+		generatedMusic = true;
+	}
+
+	// Generate notes within a time range (for bulk loading)
+	private function generateNotesInRange(startTime:Float, endTime:Float):Void
+	{
+		var oldNote:Note = null;
+		var sectionsData:Array<SwagSection> = PlayState.SONG.notes;
+		var ghostNotesCaught:Int = 0;
+		var daBpm:Float = Conductor.bpm;
+		var notesGenerated:Int = 0;
+	
+		for (section in sectionsData)
+		{
+			if (section.changeBPM != null && section.changeBPM && section.bpm != null && daBpm != section.bpm)
+				daBpm = section.bpm;
+
+			for (i in 0...section.sectionNotes.length)
+			{
+				final songNotes: Array<Dynamic> = section.sectionNotes[i];
+				var spawnTime: Float = songNotes[0];
+				
+				// Skip notes outside the time range
+				if (spawnTime < startTime || spawnTime > endTime)
+					continue;
+
+				var noteColumn: Int = Std.int(songNotes[1] % totalColumns);
+				var holdLength: Float = songNotes[2];
+				var noteType: String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
+				if (Math.isNaN(holdLength))
+					holdLength = 0.0;
+
+				var gottaHitNote:Bool = (songNotes[1] < totalColumns);
+
+				if (i != 0) {
+					// CLEAR ANY POSSIBLE GHOST NOTES
+					for (evilNote in unspawnNotes) {
+						var matches: Bool = (noteColumn == evilNote.noteData && gottaHitNote == evilNote.mustPress && evilNote.noteType == noteType);
+						if (matches && Math.abs(spawnTime - evilNote.strumTime) < flixel.math.FlxMath.EPSILON) {
+							if (evilNote.tail.length > 0)
+								for (tail in evilNote.tail)
+								{
+									tail.destroy();
+									unspawnNotes.remove(tail);
+								}
+							evilNote.destroy();
+							unspawnNotes.remove(evilNote);
+							ghostNotesCaught++;
+						}
+					}
+				}
+
+				var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
+				var isAlt: Bool = section.altAnim && !gottaHitNote;
+				swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
+				swagNote.animSuffix = isAlt ? "-alt" : "";
+				swagNote.mustPress = gottaHitNote;
+				swagNote.sustainLength = holdLength;
+				swagNote.noteType = noteType;
+	
+				swagNote.scrollFactor.set();
+				unspawnNotes.push(swagNote);
+
+				var curStepCrochet:Float = 60 / daBpm * 1000 / 4.0;
+				final roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
+				if(roundSus > 0)
+				{
+					for (susNote in 0...roundSus)
+					{
+						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+
+						var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
+						sustainNote.animSuffix = swagNote.animSuffix;
+						sustainNote.mustPress = swagNote.mustPress;
+						sustainNote.gfNote = swagNote.gfNote;
+						sustainNote.noteType = swagNote.noteType;
+						sustainNote.scrollFactor.set();
+						sustainNote.parent = swagNote;
+						unspawnNotes.push(sustainNote);
+						swagNote.tail.push(sustainNote);
+
+						sustainNote.correctionOffset = swagNote.height / 2;
+						if(!PlayState.isPixelStage)
+						{
+							if(oldNote.isSustainNote)
+							{
+								oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
+								oldNote.scale.y /= playbackRate;
+								oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+							}
+
+							if(ClientPrefs.data.downScroll)
+								sustainNote.correctionOffset = 0;
+						}
+						else if(oldNote.isSustainNote)
+						{
+							oldNote.scale.y /= playbackRate;
+							oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+						}
+
+						if (sustainNote.mustPress) sustainNote.x += FlxG.width / 2; // general offset
+						else if(ClientPrefs.data.middleScroll)
+						{
+							sustainNote.x += 310;
+							if(noteColumn > 1) //Up and Right
+								sustainNote.x += FlxG.width / 2 + 25;
+						}
+					}
+				}
+
+				if (swagNote.mustPress)
+				{
+					swagNote.x += FlxG.width / 2; // general offset
+				}
+				else if(ClientPrefs.data.middleScroll)
+				{
+					swagNote.x += 310;
+					if(noteColumn > 1) //Up and Right
+					{
+						swagNote.x += FlxG.width / 2 + 25;
+					}
+				}
+				if(!noteTypes.contains(swagNote.noteType))
+					noteTypes.push(swagNote.noteType);
+
+				oldNote = swagNote;
+				notesGenerated++;
+			}
+		}
+		
+		if (notesGenerated > 0)
+		{
+			unspawnNotes.sort(sortByTime);
+		}
 	}
 
 	// called only once per different event (Used for precaching)
@@ -1751,6 +2088,43 @@ class PlayState extends MusicBeatState
 
 			if(ClientPrefs.data.timeBarType != 'Song Name')
 				timeTxt.text = FlxStringUtil.formatTime(secondsTotal, false);
+		}
+
+		// Bulk loading: generate notes on-demand as song progresses
+		if (bulkLoadingEnabled && hasGeneratedInitialNotes && !paused && !endingSong && !startingSong && generatedMusic)
+		{
+			var currentTime:Float = Conductor.songPosition;
+			var nextLoadTime:Float = lastGeneratedTime + bulkLoadWindow;
+			
+			if (currentTime >= nextLoadTime - 5000) // Start loading 5 seconds before window ends
+			{
+				var loadStart:Float = lastGeneratedTime < 0 ? 0 : lastGeneratedTime;
+				var loadEnd:Float = loadStart + bulkLoadWindow;
+				generateNotesInRange(loadStart, loadEnd);
+				lastGeneratedTime = loadEnd;
+			}
+			
+			// Clean up old notes that are far behind (more than 30 seconds behind)
+			var cleanupTime:Float = currentTime - 30000;
+			var notesToRemove:Array<Note> = [];
+			for (note in unspawnNotes)
+			{
+				if (note != null && note.strumTime < cleanupTime && !note.isSustainNote)
+				{
+					notesToRemove.push(note);
+				}
+			}
+			for (note in notesToRemove)
+			{
+				if (note.tail.length > 0)
+					for (tail in note.tail)
+					{
+						tail.destroy();
+						unspawnNotes.remove(tail);
+					}
+				note.destroy();
+				unspawnNotes.remove(note);
+			}
 		}
 
 		if (camZooming)
@@ -2641,7 +3015,7 @@ class PlayState extends MusicBeatState
 		if (showCombo && ClientPrefs.data.showComboPopup)
 			comboGroup.add(comboSpr);
 
-		var separatedScore:String = Std.string(combo).lpad('0', 3);
+		var separatedScore:String = ClientPrefs.data.betterNumberFormatting ? Std.string(combo) : Std.string(combo).lpad('0', 3);
 		for (i in 0...separatedScore.length)
 		{
 			var numScore:FlxSprite = new FlxSprite().loadGraphic(Paths.image(uiFolder + 'num' + Std.parseInt(separatedScore.charAt(i)) + uiPostfix));
@@ -3091,7 +3465,12 @@ class PlayState extends MusicBeatState
 			if (!note.isSustainNote)
 			{
 				combo++;
-				if(combo > 9999) combo = 9999;
+				var maxCombo:Int = 9999;
+				if (ClientPrefs.data.disableComboCap)
+				{
+					maxCombo = ClientPrefs.data.maxComboCap ? 0x7FFFFFFF : 0x7FFFFFFF; // Int32 max: 2,147,483,647
+				}
+				if(combo > maxCombo) combo = maxCombo;
 				popUpScore(note);
 			}
 			var gainHealth:Bool = true; // prevent health gain, *if* sustains are treated as a singular note

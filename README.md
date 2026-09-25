@@ -1,127 +1,88 @@
-![PsychionalEngineLogo](docs/img/PsychEngineLogoTweak.png)
+# ADR Engine Redux
 
-Engine originally used on [Mind Games Mod](https://gamebanana.com/mods/301107), intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.
+This is my own engine.
 
-## Installation:
+This engine will help me learn how to optimize Psych Engine.
 
-Refer to [the Build Instructions](/docs/BUILDING.md)
+H-Slice is currently **90× better than this build**, but I'm still learning and improving ADR Engine Redux.
 
-## Customization:
+If you want to add features onto your own engine, please give credit. Credit is not needed, but it is **very appreciated** if you do.
 
-If you wish to disable things like *Lua Scripts* or *Video Cutscenes*, you can refer to the `Project.xml` file.
+This engine is **for ME only**, not other people.
 
-Inside `Project.xml`, you will find several variables to customize Psych Engine to your liking.
+I don't want to add **mobile support**, since it broke my last ADR Engine.
 
-To start you off, disabling *Video Cutscenes* should be simple, simply delete the line `"VIDEOS_ALLOWED"` or comment it out by wrapping the line in XML-like comments, like this: `<!-- YOUR_LINE_HERE -->`
+And yes, this engine is **vibe coded**. I'm using AI if it can help me make a more optimized build.
 
-Same goes for *Lua Scripts*, comment out or delete the line with `LUA_ALLOWED`, this and other customization options are all available within the `Project.xml` file.
+## ⚠️ IMPORTANT — AI / HARASSMENT WARNING
 
-## Softcoding (.lua/.hx)
-For this you can head over to [the wiki](https://shadowmario.github.io/psychengine.lua)
+Yes, **AI was used to help make this engine.** I'm not hiding that.
 
-There you can learn how to use the 212 PlayState funcions in your mod!
+If you don't like AI, that's completely fine. You don't have to use AI for your own projects, and you're free to criticize AI-assisted development.
 
-## Credits:
-* Shadow Mario - Main Programmer and Head of Psych Engine.
-* Riveren - Main Artist/Animator of Psych Engine.
+**What is not okay is harassing me or other people over it.**
 
-### Special Thanks
-* bbpanzu - Ex-Team Member (Programmer).
-* crowplexus - HScript Iris, Input System v3, and Other PRs.
-* Kamizeta - Creator of Pessy, Psych Engine's mascot.
-* MaxNeton - Loading Screen Easter Egg Artist/Animator.
-* Keoiki - Note Splash Animations and Latin Alphabet.
-* SqirraRNG - Crash Handler and Base code for Chart Editor's Waveform.
-* EliteMasterEric - Runtime Shaders support and Other PRs.
-* MAJigsaw77 - .MP4 Video Loader Library (hxvlc).
-* iFlicky - Composer of Psync, Tea Time and some sound effects.
-* KadeDev - Fixed some issues on Chart Editor and Other PRs.
-* superpowers04 - LUA JIT Fork.
-* CheemsAndFriends - Creator of FlxAnimate.
-* Ezhalt - Pessy's Easter Egg Jingle.
-* MaliciousBunny - Video for the Final Update.
+Do not use this project as an excuse to:
 
-***
+* Spam hate comments because AI was used
+* Personally attack me over using AI
+* Harass me through Discord, YouTube, GitHub, or other platforms
+* Start drama specifically because this project is AI-assisted
+* Encourage other people to attack or dogpile me
+* Repeatedly insult the project instead of giving actual feedback
+* Follow me around different platforms just to continue an argument about AI
+* Attack contributors or other developers for using AI
+* Make threats or otherwise try to intimidate people involved with the project
 
-# Features
+If you have an actual problem with the engine, **tell me what the problem is**.
 
-## Attractive animated dialogue boxes:
+If you find a bug, report it.
 
-![Animated Dialogue Boxes](docs/img/dialogue.gif)
+If you think the optimization could be better, explain why.
 
-## New Main Menu
-* A brand new menu that makes your experience even better!
-![Main Menu](docs/img/MainMenu.png)
+If you think AI-generated code caused a problem, point out the problem and I'll look into it.
 
-## Mod Support
-* Probably one of the main points of this engine, you can code in .lua files outside of the source code, making your own weeks without even messing with the source!
-* Comes with a Mod Organizing/Disabling Menu.
-![Mod Support](docs/img/ModsMenu.png)
+That's **actual criticism** and can help improve the engine.
 
+Saying *"you used AI, therefore your engine is garbage"* doesn't help anyone.
 
-## Atleast one change to every week:
-### Week 1:
-  * New Dad Left sing sprite
-  * Unused stage lights are now used
-  * Dad Battle has a spotlight effect for the breakdown
-### Week 2:
-  * Both BF and Skid & Pump does "Hey!" animations
-  * Thunders does a quick light flash and zooms the camera in slightly
-  * Added a quick transition/cutscene to Monster
-### Week 3:
-  * BF does "Hey!" during Philly Nice
-  * Blammed has a cool new colors flash during that sick part of the song
-### Week 4:
-  * Better hair physics for Mom/Boyfriend (Maybe even slightly better than Week 7's :eyes:)
-  * Henchmen die during all songs. Yeah :(
-### Week 5:
-  * Bottom Boppers and GF does "Hey!" animations during Cocoa and Eggnog
-  * On Winter Horrorland, GF bops her head slower in some parts of the song.
-### Week 6:
-  * On Thorns, the HUD is hidden during the cutscene
-  * Also there's the Background girls being spooky during the "Hey!" parts of the Instrumental
+**AI is a tool.** I'm using it to experiment, learn, troubleshoot, and see whether I can make a more optimized build.
 
-## Cool new Chart Editor changes and countless bug fixes
-![Chart Editor](docs/img/chart.png)
-* You can now chart "Event" notes, which are bookmarks that trigger specific actions that usually were hardcoded on the vanilla version of the game.
-* Your song's BPM can now have decimal values
-* You can manually adjust a Note's strum time if you're really going for milisecond precision
-* You can change a note's type on the Editor, it comes with five example types:
-  * Alt Animation: Forces an alt animation to play, useful for songs like Ugh/Stress
-  * Hey: Forces a "Hey" animation instead of the base Sing animation, if Boyfriend hits this note, Girlfriend will do a "Hey!" too.
-  * Hurt Notes: If Boyfriend hits this note, he plays a miss animation and loses some health.
-  * GF Sing: Rather than the character hitting the note and singing, Girlfriend sings instead.
-  * No Animation: Character just hits the note, no animation plays.
+You don't have to like my development process.
 
-## Multiple editors to assist you in making your own Mod
-![Master Editor Menu](docs/img/editors.png)
-* Working both for Source code modding and Downloaded builds!
+**You just need to respect that it's my project and my choice.**
 
-## Story mode menu rework:
-![Story Mode Menu](docs/img/storymode.png)
-* Added a different BG to every song (less Tutorial)
-* All menu characters are now in individual spritesheets, makes modding it easier.
+If you genuinely hate AI-assisted development that much, you're free to **not use this engine**. You don't need to harass me or turn the project into drama.
 
-## Credits menu
-![Credits Menu](docs/img/credits.png)
-* You can add a head icon, name, description and a Redirect link for when the player presses Enter while the item is currently selected.
+**Criticism is welcome. Harassment isn't.**
 
-## Awards/Achievements
-* The engine comes with 16 example achievements that you can mess with and learn how it works (Check Achievements.hx and search for "checkForAchievement" on PlayState.hx)
-![Achievements](docs/img/Achievements.png)
+## Build Comparison
 
-## Options menu:
-* You can change Note colors, Delay and Combo Offset, Controls and Preferences there.
- * On Preferences you can toggle Downscroll, Middlescroll, Anti-Aliasing, Framerate, Low Quality, Note Splashes, Flashing Lights, etc.
-![Options](docs/img/Options.png)
+**ADR Engine:** 15% Stronger Than This Build
+**ADR Engine Redux:** 5% Stronger *(Currently Tested / Status)*
 
-## Other gameplay features:
-* When the enemy hits a note, their strum note also glows.
-* Lag doesn't impact the camera movement and player icon scaling anymore.
-* Some stuff based on Week 7's changes has been put in (Background colors on Freeplay, Note splashes)
-* You can reset your Score on Freeplay/Story Mode by pressing Reset button.
-* You can listen to a song or adjust Scroll Speed/Damage taken/etc. on Freeplay by pressing Space.
-* You can enable "Combo Stacking" in Gameplay Options. This causes the combo sprites to just be one sprite with an animation rather than sprites spawning each note hit.
+| Engine               |                                    Result |
+| -------------------- | ----------------------------------------: |
+| **H-Slice + JS**     |              90% stronger than this build |
+| **H-Slice**          |              80% stronger than this build |
+| **JS Engine**        |              50% stronger than this build |
+| **DenpaEX**          |              25% stronger than this build |
+| **ADR Engine**       |              15% stronger than this build |
+| **ADR Engine Redux** | 5% stronger *(Currently Tested / Status)* |
 
+### How Is It Stronger?
 
-#### Psych Engine by ShadowMario, Friday Night Funkin' by ninjamuffin99
+I used my own **lag tester** on each engine.
+
+The test uses **2.5× scroll speed**, with the notes getting denser and denser until the engine starts lagging.
+
+This is my own benchmark, so the percentages are based on **my testing methodology and setup** rather than being official performance ratings.
+
+The lag tester is currently **private**, but I may release it someday.
+
+## Goal
+
+The main goal of ADR Engine Redux is to help me learn how to optimize Psych Engine and experiment with different performance improvements.
+
+H-Slice is currently far ahead of this build, but that's part of the reason I'm making ADR Engine Redux — **I want to learn how optimization works and see how far I can push my own engine.**
+

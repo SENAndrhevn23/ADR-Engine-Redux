@@ -83,6 +83,13 @@ import states.TitleState;
 	public var showRatingPopup:Bool = true;
 	public var showNumberPopup:Bool = true;
 	public var showPopupScore:Bool = true;
+	public var bulkLoading:Bool = false; // Lazy/chunked note loading for large charts
+	public var bulkFasterLoading:Bool = false; // Optimized full loading for large charts
+	
+	// Graphics
+	public var disableComboCap:Bool = false; // Remove 9999 combo cap (max Int32)
+	public var maxComboCap:Bool = false; // Max combo cap (Number.MAX_VALUE ~1.79e308)
+	public var betterNumberFormatting:Bool = false; // Remove leading zeros from combo numbers
 }
 
 class ClientPrefs {

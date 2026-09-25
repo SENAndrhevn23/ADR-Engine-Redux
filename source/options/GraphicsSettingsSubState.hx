@@ -45,6 +45,25 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		// Combo Cap Options
+		var option:Option = new Option('Disable Combo Cap',
+			'Removes the 9999 combo limit.\nMax combo becomes 2,147,483,647 (Int32 max).',
+			'disableComboCap',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option('Max Combo Cap',
+			'Sets combo cap to 1.79e308 (Number.MAX_VALUE).\nOnly works if "Disable Combo Cap" is enabled.',
+			'maxComboCap',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option('Better Number Formatting',
+			'Removes leading zeros from combo numbers.\nDisplays "1, 2, 3" instead of "001, 002, 003".',
+			'betterNumberFormatting',
+			BOOL);
+		addOption(option);
+
 		#if !html5 //Apparently other framerates isn't correctly supported on Browser? Probably it has some V-Sync shit enabled by default, idk
 		var option:Option = new Option('Framerate',
 			"Pretty self explanatory, isn't it?",
